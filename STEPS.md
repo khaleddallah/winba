@@ -57,11 +57,13 @@ bun install
 
 Define CSS custom properties (`--wm-*`) in `app.css`, extend Tailwind v4 `@theme` to map them.
 
-### Files Modified
+### Files Modified / Created
 | File | Change |
 |---|---|
 | `src/app.css` | Added `:root` block with all `--wm-*` custom properties (dark theme defaults) |
+| `src/app.css` | Added `[data-theme="light"]` override with light theme values |
 | `src/app.css` | Added `@theme` block mapping tokens to Tailwind v4 utilities (`--color-wm-*`, `--radius-wm`, `--spacing-wm-header`) |
+| `src/lib/core/ThemeSwitcher.ts` | Created — `setTheme()`, `getTheme()`, `toggleTheme()`, `initTheme()` with `localStorage` persistence |
 
 ### Tokens Defined
 | Token | Value | Tailwind Utility |
@@ -81,7 +83,9 @@ Define CSS custom properties (`--wm-*`) in `app.css`, extend Tailwind v4 `@theme
 
 ### Status
 - [x] CSS custom properties defined under `:root`
+- [x] Light theme via `[data-theme="light"]` selector
 - [x] Tailwind v4 `@theme` mappings (no `tailwind.config.js` needed)
+- [x] `ThemeSwitcher.ts` — get/set/toggle + localStorage persistence
 - [x] Build passes
 
 ---

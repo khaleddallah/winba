@@ -16,6 +16,20 @@
   --wm-snap-guide:    rgba(137,180,250,0.4);
 }
 
+/* ── Light theme override ── */
+[data-theme="light"] {
+  --wm-bg-primary:    #eff1f5;
+  --wm-bg-secondary:  #e6e9ef;
+  --wm-bg-surface:    #ccd0da;
+  --wm-text-primary:  #4c4f69;
+  --wm-text-secondary:#6c6f85;
+  --wm-border:        #9ca0b0;
+  --wm-accent:        #1e66f5;
+  --wm-accent-hover:  #209fb5;
+  --wm-header-bg:     #e6e9ef;
+  --wm-snap-guide:    rgba(30,102,245,0.4);
+}
+
 /* ── Map tokens → Tailwind v4 utilities ── */
 @theme {
   --color-wm-bg-primary:    var(--wm-bg-primary);

@@ -32,7 +32,10 @@ The app boots through these files, in this order.
 The single HTML shell. SvelteKit injects everything into the `%sveltekit.head%` and `%sveltekit.body%` placeholders. You almost never edit this.
 
 ### `src/app.css`
-Global stylesheet. Currently just imports Tailwind. Will eventually hold our theme tokens (`--wm-*` CSS custom properties).
+Global stylesheet. Imports Tailwind and defines the theming system:
+- **`:root`** — all `--wm-*` CSS custom properties with dark theme defaults (Catppuccin Mocha).
+- **`[data-theme="light"]`** — overrides the same variables with light values (Catppuccin Latte).
+- **`@theme`** — maps the CSS variables to Tailwind v4 utilities so you can write `bg-wm-bg-primary`, `text-wm-accent`, `rounded-wm`, etc.
 
 ### `src/routes/+layout.svelte`
 The root layout — wraps every page. Imports `app.css` so Tailwind is available everywhere, and sets the favicon.
@@ -77,3 +80,16 @@ Defines `ServiceClientConfig` (base URL + prefix for talking to a backend) and `
 
 ### `app.ts`
 Defines `AppConfig` (which plugins to load), `UserLayoutEntry` (a saved window position for one plugin), and `UserConfig` (the full saved layout). This is what gets persisted so windows reopen where you left them.
+
+---
+
+## Core
+
+Framework engine classes that live under `src/lib/core/`.
+
+### `ThemeSwitcher.ts`
+Manages dark/light theme switching via a `data-theme` attribute on `<html>`. Exports four functions:
+- **`setTheme(theme)`** — applies a theme and saves the choice to `localStorage`.
+- **`getTheme()`** — returns the currently active theme (`'dark'` or `'light'`).
+- **`toggleTheme()`** — switches between dark and light.
+- **`initTheme()`** — restores the saved theme on app boot. Call once in the App Shell.

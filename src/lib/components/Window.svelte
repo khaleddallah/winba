@@ -1,12 +1,11 @@
 <script lang="ts">
-  import { onMount, onDestroy, tick } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { WindowsStore, bringToFront, updateWindowConfig } from '$lib/core/WindowsStore';
   import { type WinConfig } from '../types';
   import { get } from 'svelte/store';
 
   export let config: WinConfig;
   export let visible: boolean = true;
-  export let zIndex: number = 1;
   export let windowId: string;
 
   let windowEl: HTMLElement;
@@ -22,9 +21,10 @@
   let isAltPressed = false;
   const SNAP_THRESHOLD = 8;
 
-  // Reactive bounds
+  // Reactive values from store
   $: currentBounds = config.bounds;
   $: isActive = $WindowsStore.activeWindowId === windowId;
+  $: zIndex = $WindowsStore.windowOrder.indexOf(windowId) + 1;
 
   onMount(() => {
     registerWindow();
@@ -363,7 +363,7 @@
     border-bottom: 1px solid #333;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     padding: 0 12px;
     cursor: default;
     user-select: none;
@@ -374,33 +374,6 @@
     font-weight: 500;
     color: #e0e0e0;
   }
-
-  .window-controls {
-    display: flex;
-    gap: 8px;
-  }
-
-  .window-btn {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-    font-size: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: transparent;
-    transition: all 0.2s;
-  }
-
-  .window-btn:hover {
-    color: rgba(0, 0, 0, 0.7);
-  }
-
-  .window-btn.close { background: #ff5f56; }
-  .window-btn.minimize { background: #ffbd2e; }
-  .window-btn.maximize { background: #27c93f; }
 
   .window-content {
     flex: 1;

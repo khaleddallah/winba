@@ -45,6 +45,12 @@ The main (and only) page. This will become the **App Shell** — the surface tha
 
 ---
 
+
+## Components
+
+### `src/lib/components/Window.svelte`
+Reusable window component with drag, resize, snap, and z-index logic. Handles registration with the window manager store, supports snapping to viewport and sibling windows, and exposes a slot for plugin content. Visual snap guides and keyboard modifiers included.
+
 ## Library Barrel
 
 ### `src/lib/index.ts`
@@ -86,6 +92,9 @@ Defines `AppConfig` (which plugins to load), `UserLayoutEntry` (a saved window p
 ## Core
 
 Framework engine classes that live under `src/lib/core/`.
+
+### `WindowsStore.ts`
+Svelte store and helpers for window management. Tracks all open windows, their order (z-index), active window, and provides API for registration, unregistration, bringing to front, updating config, and querying window state. Used by `Window.svelte` for all window lifecycle and stacking logic.
 
 ### `ThemeSwitcher.ts`
 Manages dark/light theme switching via a `data-theme` attribute on `<html>`. Exports four functions:

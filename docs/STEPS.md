@@ -90,19 +90,41 @@ Define CSS custom properties (`--wm-*`) in `app.css`, extend Tailwind v4 `@theme
 
 ---
 
-## Step 3: Window component ⬜
+## Step 3: Window component ✅
 
-Build `Window.svelte` with drag, resize, clamp, header, `visible` prop.
+**File:** `src/lib/components/Window.svelte`
 
-_Not started_
+- Svelte window component with:
+	- Drag and resize (with 8px snap threshold to viewport and sibling windows)
+	- Header bar (optional, with title)
+	- Z-index/active state via store
+	- Resizable handles (8 directions)
+	- Clamp to viewport and min/max bounds
+	- Snap guides (visual lines)
+	- `visible` prop
+	- Keyboard Alt disables snapping
+	- Store registration/unregistration on mount/destroy
+
+**Status:**
+- [x] Window.svelte implemented and integrated with store
+- [x] All core window behaviors (drag, resize, snap, z-index, header, visible)
 
 ---
 
-## Step 4: WindowManager ⬜
+## Step 4: WindowManager ✅
 
-Z-index stacking (`windowOrder[]`), `bringToFront()`, `activeWindowId`, snapping (8px threshold, viewport + siblings).
+**File:** `src/lib/core/WindowsStore.ts`
 
-_Not started_
+- Svelte store and helpers for window management:
+	- `WindowsStore` writable store with window configs, order, and active window
+	- `registerWindow`, `unregisterWindow` for lifecycle
+	- `bringToFront`, `setActiveWindow`, `updateWindowConfig` for z-index and state
+	- Snap logic integrated in Window.svelte
+	- `getWindowZIndex`, `getAllWindows`, `getWindowConfig` helpers
+
+**Status:**
+- [x] WindowManager store and API implemented
+- [x] Z-index, stacking, active window, and config updates all managed in store
 
 ---
 

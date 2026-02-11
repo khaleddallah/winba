@@ -1,8 +1,14 @@
+
 @import 'tailwindcss';
+
+body {
+  background: var(--wm-bg-primary);
+  color: var(--wm-text-primary);
+}
 
 /* ── WM7 Theme Tokens (dark default) ── */
 :root {
-  --wm-bg-primary:    #1e1e2e;
+  --wm-bg-primary:    #2b2b2b;
   --wm-bg-secondary:  #313244;
   --wm-bg-surface:    #45475a;
   --wm-text-primary:  #cdd6f4;

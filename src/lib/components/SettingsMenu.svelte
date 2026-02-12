@@ -13,6 +13,7 @@
         THEMES,
         type Theme,
     } from "$lib/core/ThemeSwitcher";
+    import { WindowsStore, updateWindowConfig } from "$lib/core/WindowsStore";
     import { onMount } from "svelte";
 
     let currentTheme: Theme = $state("light");
@@ -20,6 +21,12 @@
     function handleThemeChange(newTheme: Theme) {
         setTheme(newTheme);
         currentTheme = newTheme;
+    }
+
+    function toggleWindowVisibility(id: string, currentVisible?: boolean) {
+        // If undefined, it means it's currently visible (default), so toggle to false
+        const newVisible = currentVisible === false ? true : false;
+        updateWindowConfig(id, { visible: newVisible });
     }
 
     onMount(() => {
@@ -71,14 +78,29 @@
             </DropdownMenu.SubContent>
         </DropdownMenu.Sub>
 
-        <!-- Window (Placeholder) -->
+        <!-- Window List -->
         <DropdownMenu.Sub>
-            <DropdownMenu.SubTrigger disabled>
+            <DropdownMenu.SubTrigger>
                 <AppWindow class="mr-2 h-4 w-4" />
                 <span>Window</span>
             </DropdownMenu.SubTrigger>
             <DropdownMenu.SubContent>
-                <DropdownMenu.Item>Default</DropdownMenu.Item>
+                {#each Object.entries($WindowsStore.winConfigs) as [id, config]}
+                    <DropdownMenu.CheckboxItem
+                        checked={config.visible !== false}
+                        onclick={(e) => {
+                            e.preventDefault();
+                            toggleWindowVisibility(id, config.visible);
+                        }}
+                    >
+                        {config.title}
+                    </DropdownMenu.CheckboxItem>
+                {/each}
+                {#if Object.keys($WindowsStore.winConfigs).length === 0}
+                    <DropdownMenu.Item disabled
+                        >No windows open</DropdownMenu.Item
+                    >
+                {/if}
             </DropdownMenu.SubContent>
         </DropdownMenu.Sub>
     </DropdownMenu.Content>

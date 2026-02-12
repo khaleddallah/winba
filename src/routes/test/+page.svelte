@@ -1,12 +1,12 @@
 <script>
   import Window from '$lib/components/Window.svelte';
   import { registerWindow } from '$lib/core/WindowsStore';
-  import { createAppStore } from '$lib/core/AppStore';
+  import { AppStore } from '$lib/core/AppStore';
   import { EventBus } from '$lib/core/EventBus';
   import { onMount } from 'svelte';
 
   // AppStore test
-  const appStore = createAppStore();
+  const appStore = new AppStore();
   let storeValue = '';
   function setStoreValue() {
     appStore.set('testKey', 'Hello from AppStore!');

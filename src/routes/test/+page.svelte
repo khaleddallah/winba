@@ -26,23 +26,9 @@
     return () => { unsubscribe(); unsubEvent(); };
   });
 
-  const myConfig = {
-    title: 'My Window',
-    bounds: { x: 100, y: 100, w: 400, h: 300 },
-    boundsLimits: { minW: 200, minH: 150 },
-    hasHeader: true,
-    movable: true,
-    resizable: true
-  };
-
-   const myConfig2 = {
-    title: 'My Window2',
-    bounds: { x: 100, y: 100, w: 400, h: 300 },
-    boundsLimits: { minW: 200, minH: 150 },
-    hasHeader: true,
-    movable: true,
-    resizable: true
-  };
+  import windowsConfig from '../../../windows.config.json';
+  const myConfig = windowsConfig[0];
+  const myConfig2 = windowsConfig[1];
 </script>
 
 <div class="p-4 space-y-4">

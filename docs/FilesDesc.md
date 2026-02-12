@@ -44,7 +44,7 @@ The root layout — wraps every page. Imports `app.css` so Tailwind is available
 ### `src/routes/+page.svelte`
 The main (and only) page. This will become the **App Shell** — the surface that renders the WindowManager, all plugin windows, and the toolbar.
 
-### `src/routes/test.svelte`
+### `src/routes/test/+page.svelte`
 A dedicated test page for development. Contains interactive tests and demos for core utilities like `AppStore` and `EventBus`. Useful for verifying store reactivity and event bus behavior in isolation, without affecting the main app shell. Not included in production builds.
 
 ---
@@ -67,6 +67,7 @@ Barrel file for all types. Lets you write `import { Bounds, PluginConfig } from 
 
 ## Types
 
+
 All live under `src/lib/types/`. They define the **contracts** — no logic, just shapes.
 
 ### `bounds.ts`
@@ -78,12 +79,6 @@ The biggest type file. Defines:
 - **`PluginApi`** — a named method a plugin exposes to other plugins.
 - **`PluginConfig`** — the full description of a plugin: its id, name, whether it has UI, its window config, its APIs, and its dependencies.
 - **`PluginLife`** — an optional base class with lifecycle hooks (`onInit`, `onActivate`, `onDeactivate`, `onDestroy`). A plugin can extend this if it needs setup/teardown logic.
-
-### `store.ts`
-Defines `AppStore` — the shared reactive state contract. Plugins use `get`/`set`/`subscribe` to share data (like the currently selected file, theme, etc.) without importing each other.
-
-### `events.ts`
-Defines `EventHandler` and `IEventBus` — the pub/sub contract for fire-and-forget signals. Unlike the Store (persistent state), events are transient: if nobody is listening when it fires, it's gone.
 
 ### `service.ts`
 Defines `ServiceClientConfig` (base URL + prefix for talking to a backend) and `FileEntry` (the shape of a file object returned by the files API: name, path, isDir, size).
@@ -100,11 +95,12 @@ Framework engine classes that live under `src/lib/core/`.
 ### `WindowsStore.ts`
 Svelte store and helpers for window management. Tracks all open windows, their order (z-index), active window, and provides API for registration, unregistration, bringing to front, updating config, and querying window state. Used by `Window.svelte` for all window lifecycle and stacking logic.
 
+
 ### `AppStore.ts`
-Implements the shared reactive store contract (`AppStore` interface). Provides `get`, `set`, and `subscribe` methods for plugins to share state. Uses Svelte's `writable` store internally. Keys are namespaced for plugin safety. Tested in `+page.svelte`.
+Implements the shared reactive store as a self-contained class. Provides `get`, `set`, and `subscribe` methods for plugins to share state. Uses Svelte's `writable` store internally. Keys are namespaced for plugin safety. No longer depends on a separate type file. Tested in `test/+page.svelte`.
 
 ### `EventBus.ts`
-Implements the pub/sub event bus contract (`IEventBus` interface). Provides `on`, `emit`, and `off` methods for transient, fire-and-forget events. Handlers are registered per event name and can be unsubscribed. Tested in `+page.svelte`.
+Implements the pub/sub event bus as a self-contained class. Provides `on`, `emit`, and `off` methods for transient, fire-and-forget events. Handlers are registered per event name and can be unsubscribed. No longer depends on a separate type file. Tested in `test/+page.svelte`.
 
 ### `ThemeSwitcher.ts`
 Manages dark/light theme switching via a `data-theme` attribute on `<html>`. Exports four functions:

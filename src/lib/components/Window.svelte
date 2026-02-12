@@ -17,8 +17,9 @@
   let startY = 0;
   let startBounds = { x: 0, y: 0, w: 0, h: 0 };
 
-  // Snap state
-  let snapGuides: { type: 'x' | 'y'; value: number }[] = [];
+  // Snap state - guides now store position and which edge they represent
+  type Guide = { type: 'x' | 'y'; value: number; pos: number; length?: number };
+  let snapGuides: Guide[] = [];
   let isAltPressed = false;
   const SNAP_THRESHOLD = 8;
 
@@ -104,7 +105,7 @@
     const otherWindows = getOtherWindowsBounds();
 
     if (!isAltPressed) {
-      const snap = calculateSnap(newX, newY, currentBounds.w, currentBounds.h, viewport, otherWindows);
+      const snap = calculateSnapMove(newX, newY, currentBounds.w, currentBounds.h, viewport, otherWindows);
       newX = snap.x;
       newY = snap.y;
       snapGuides = snap.guides;
@@ -158,7 +159,7 @@
     let newW = startBounds.w;
     let newH = startBounds.h;
 
-    // Apply resize based on handle
+    // Calculate raw resize first
     if (resizeHandle.includes('e')) newW = startBounds.w + dx;
     if (resizeHandle.includes('w')) {
       newW = startBounds.w - dx;
@@ -170,14 +171,14 @@
       newY = startBounds.y + dy;
     }
 
-    // Apply limits
+    // Apply min/max constraints BEFORE snapping
     const limits = config.boundsLimits || {};
     const minW = limits.minW || 100;
     const minH = limits.minH || 100;
     const maxW = limits.maxW || Infinity;
     const maxH = limits.maxH || Infinity;
 
-    // Constrain minimum size
+    // Enforce minimum size
     if (newW < minW) {
       if (resizeHandle.includes('w')) newX = startBounds.x + startBounds.w - minW;
       newW = minW;
@@ -187,12 +188,26 @@
       newH = minH;
     }
 
-    // Constrain maximum size
+    // Enforce maximum size
     newW = Math.min(newW, maxW);
     newH = Math.min(newH, maxH);
 
-    // Clamp to viewport
+    // Snap during resize
     const viewport = getViewportBounds();
+    const otherWindows = getOtherWindowsBounds();
+    
+    if (!isAltPressed) {
+      const snap = calculateSnapResize(newX, newY, newW, newH, viewport, otherWindows, resizeHandle);
+      newX = snap.x;
+      newY = snap.y;
+      newW = snap.w;
+      newH = snap.h;
+      snapGuides = snap.guides;
+    } else {
+      snapGuides = [];
+    }
+
+    // Final viewport clamp
     if (newX < 0) { newW += newX; newX = 0; }
     if (newY < 0) { newH += newY; newY = 0; }
     if (newX + newW > viewport.w) newW = viewport.w - newX;
@@ -204,6 +219,7 @@
   function onResizeEnd() {
     isResizing = false;
     resizeHandle = '';
+    snapGuides = [];
     document.body.style.userSelect = '';
     window.removeEventListener('mousemove', onResizeMove);
     window.removeEventListener('mouseup', onResizeEnd);
@@ -226,7 +242,8 @@
       .map(([_, cfg]) => cfg.bounds);
   }
 
-  function calculateSnap(
+  // Separate function for move snapping - simpler, only positions change
+  function calculateSnapMove(
     x: number, 
     y: number, 
     w: number, 
@@ -234,58 +251,280 @@
     viewport: { w: number; h: number },
     others: { x: number; y: number; w: number; h: number }[]
   ) {
-    const guides: { type: 'x' | 'y'; value: number }[] = [];
+    const guides: Guide[] = [];
+    
+    // Snap targets: value = where the edge should be, pos = where to draw guide
+    const xSnaps: Array<{ value: number; pos: number; dist: number }> = [];
+    const ySnaps: Array<{ value: number; pos: number; dist: number }> = [];
+
+    // Viewport edges
+    xSnaps.push({ value: 0, pos: 0, dist: Math.abs(x) });
+    xSnaps.push({ value: viewport.w - w, pos: viewport.w, dist: Math.abs(viewport.w - w - x) });
+    ySnaps.push({ value: 0, pos: 0, dist: Math.abs(y) });
+    ySnaps.push({ value: viewport.h - h, pos: viewport.h, dist: Math.abs(viewport.h - h - y) });
+
+    // Other windows
+    others.forEach(b => {
+      // Left edge to other's right
+      xSnaps.push({ value: b.x + b.w, pos: b.x + b.w, dist: Math.abs(b.x + b.w - x) });
+      // Right edge to other's left
+      xSnaps.push({ value: b.x - w, pos: b.x, dist: Math.abs(b.x - w - x) });
+      // Horizontal centers
+      xSnaps.push({ value: b.x + b.w/2 - w/2, pos: b.x + b.w/2, dist: Math.abs(b.x + b.w/2 - w/2 - x) });
+
+      // Top to other's bottom
+      ySnaps.push({ value: b.y + b.h, pos: b.y + b.h, dist: Math.abs(b.y + b.h - y) });
+      // Bottom to other's top
+      ySnaps.push({ value: b.y - h, pos: b.y, dist: Math.abs(b.y - h - y) });
+      // Vertical centers
+      ySnaps.push({ value: b.y + b.h/2 - h/2, pos: b.y + b.h/2, dist: Math.abs(b.y + b.h/2 - h/2 - y) });
+    });
+
+    // Find best snaps within threshold
+    const bestX = xSnaps.filter(s => s.dist < SNAP_THRESHOLD).sort((a, b) => a.dist - b.dist)[0];
+    const bestY = ySnaps.filter(s => s.dist < SNAP_THRESHOLD).sort((a, b) => a.dist - b.dist)[0];
+
+    // Build guides for all snaps at the same position as best snap
+    if (bestX) {
+      xSnaps.filter(s => Math.abs(s.pos - bestX.pos) < 1 && s.dist < SNAP_THRESHOLD).forEach(s => {
+        if (!guides.find(g => g.type === 'x' && Math.abs(g.pos - s.pos) < 1)) {
+          guides.push({ type: 'x', value: s.value, pos: s.pos });
+        }
+      });
+    }
+
+    if (bestY) {
+      ySnaps.filter(s => Math.abs(s.pos - bestY.pos) < 1 && s.dist < SNAP_THRESHOLD).forEach(s => {
+        if (!guides.find(g => g.type === 'y' && Math.abs(g.pos - s.pos) < 1)) {
+          guides.push({ type: 'y', value: s.value, pos: s.pos });
+        }
+      });
+    }
+
+    return { 
+      x: bestX ? bestX.value : x, 
+      y: bestY ? bestY.value : y, 
+      guides 
+    };
+  }
+
+  // Separate function for resize snapping - handles edge-specific logic correctly
+  function calculateSnapResize(
+    x: number, 
+    y: number, 
+    w: number, 
+    h: number, 
+    viewport: { w: number; h: number },
+    others: { x: number; y: number; w: number; h: number }[],
+    handle: string
+  ) {
+    const guides: Guide[] = [];
     let snapX = x;
     let snapY = y;
+    let snapW = w;
+    let snapH = h;
 
-    // Snap to viewport edges
-    const viewportSnaps = [
-      { type: 'x' as const, value: 0, target: x },
-      { type: 'x' as const, value: viewport.w - w, target: x },
-      { type: 'y' as const, value: 0, target: y },
-      { type: 'y' as const, value: viewport.h - h, target: y }
-    ];
+    // Track which edges are being resized
+    const resizingLeft = handle.includes('w');
+    const resizingRight = handle.includes('e');
+    const resizingTop = handle.includes('n');
+    const resizingBottom = handle.includes('s');
 
-    // Snap to other windows
-    others.forEach(b => {
-      // Left edge to others' right edge
-      viewportSnaps.push({ type: 'x' as const, value: b.x + b.w, target: x });
-      // Right edge to others' left edge  
-      viewportSnaps.push({ type: 'x' as const, value: b.x - w, target: x });
-      // Top to others' bottom
-      viewportSnaps.push({ type: 'y' as const, value: b.y + b.h, target: y });
-      // Bottom to others' top
-      viewportSnaps.push({ type: 'y' as const, value: b.y - h, target: y });
-      // Align centers
-      viewportSnaps.push({ type: 'x' as const, value: b.x + b.w/2 - w/2, target: x });
-      viewportSnaps.push({ type: 'y' as const, value: b.y + b.h/2 - h/2, target: y });
-    });
+    // X-axis snapping (left/right edges)
+    if (resizingLeft || resizingRight) {
+      const edgeSnaps: Array<{ 
+        edge: 'left' | 'right'; 
+        currentPos: number; 
+        targetPos: number; 
+        dist: number;
+        newX: number;
+        newW: number;
+      }> = [];
 
-    // Find closest snaps
-    let bestX = x;
-    let bestY = y;
-    let minDistX = SNAP_THRESHOLD;
-    let minDistY = SNAP_THRESHOLD;
+      // Current edge positions
+      const currentLeft = x;
+      const currentRight = x + w;
 
-    viewportSnaps.forEach(snap => {
-      const dist = Math.abs(snap.value - snap.target);
-      if (snap.type === 'x' && dist < minDistX) {
-        minDistX = dist;
-        bestX = snap.value;
-        if (!guides.find(g => g.type === 'x' && g.value === snap.value)) {
-          guides.push({ type: 'x', value: snap.value });
+      // Viewport edges
+      if (resizingLeft) {
+        edgeSnaps.push({
+          edge: 'left',
+          currentPos: currentLeft,
+          targetPos: 0,
+          dist: Math.abs(currentLeft),
+          newX: 0,
+          newW: w + (x - 0) // Expand width by moving left
+        });
+      }
+      if (resizingRight) {
+        edgeSnaps.push({
+          edge: 'right',
+          currentPos: currentRight,
+          targetPos: viewport.w,
+          dist: Math.abs(viewport.w - currentRight),
+          newX: x,
+          newW: viewport.w - x
+        });
+      }
+
+      // Other windows edges
+      others.forEach(b => {
+        const otherLeft = b.x;
+        const otherRight = b.x + b.w;
+
+        if (resizingLeft) {
+          // Snap left edge to other's right
+          edgeSnaps.push({
+            edge: 'left',
+            currentPos: currentLeft,
+            targetPos: otherRight,
+            dist: Math.abs(otherRight - currentLeft),
+            newX: otherRight,
+            newW: w + (x - otherRight)
+          });
+          // Snap left edge to other's left
+          edgeSnaps.push({
+            edge: 'left',
+            currentPos: currentLeft,
+            targetPos: otherLeft,
+            dist: Math.abs(otherLeft - currentLeft),
+            newX: otherLeft,
+            newW: w + (x - otherLeft)
+          });
+        }
+
+        if (resizingRight) {
+          // Snap right edge to other's left
+          edgeSnaps.push({
+            edge: 'right',
+            currentPos: currentRight,
+            targetPos: otherLeft,
+            dist: Math.abs(otherLeft - currentRight),
+            newX: x,
+            newW: otherLeft - x
+          });
+          // Snap right edge to other's right
+          edgeSnaps.push({
+            edge: 'right',
+            currentPos: currentRight,
+            targetPos: otherRight,
+            dist: Math.abs(otherRight - currentRight),
+            newX: x,
+            newW: otherRight - x
+          });
+        }
+      });
+
+      // Find best X snap
+      const validSnaps = edgeSnaps.filter(s => s.dist < SNAP_THRESHOLD);
+      if (validSnaps.length > 0) {
+        const best = validSnaps.sort((a, b) => a.dist - b.dist)[0];
+        snapX = best.newX;
+        snapW = best.newW;
+        
+        // Add guide at the target position
+        const guidePos = best.edge === 'left' ? best.targetPos : best.targetPos;
+        if (!guides.find(g => g.type === 'x' && Math.abs(g.pos - guidePos) < 1)) {
+          guides.push({ type: 'x', value: snapX, pos: guidePos });
         }
       }
-      if (snap.type === 'y' && dist < minDistY) {
-        minDistY = dist;
-        bestY = snap.value;
-        if (!guides.find(g => g.type === 'y' && g.value === snap.value)) {
-          guides.push({ type: 'y', value: snap.value });
+    }
+
+    // Y-axis snapping (top/bottom edges)
+    if (resizingTop || resizingBottom) {
+      const edgeSnaps: Array<{ 
+        edge: 'top' | 'bottom'; 
+        currentPos: number; 
+        targetPos: number; 
+        dist: number;
+        newY: number;
+        newH: number;
+      }> = [];
+
+      const currentTop = y;
+      const currentBottom = y + h;
+
+      // Viewport edges
+      if (resizingTop) {
+        edgeSnaps.push({
+          edge: 'top',
+          currentPos: currentTop,
+          targetPos: 0,
+          dist: Math.abs(currentTop),
+          newY: 0,
+          newH: h + (y - 0)
+        });
+      }
+      if (resizingBottom) {
+        edgeSnaps.push({
+          edge: 'bottom',
+          currentPos: currentBottom,
+          targetPos: viewport.h,
+          dist: Math.abs(viewport.h - currentBottom),
+          newY: y,
+          newH: viewport.h - y
+        });
+      }
+
+      // Other windows edges
+      others.forEach(b => {
+        const otherTop = b.y;
+        const otherBottom = b.y + b.h;
+
+        if (resizingTop) {
+          edgeSnaps.push({
+            edge: 'top',
+            currentPos: currentTop,
+            targetPos: otherBottom,
+            dist: Math.abs(otherBottom - currentTop),
+            newY: otherBottom,
+            newH: h + (y - otherBottom)
+          });
+          edgeSnaps.push({
+            edge: 'top',
+            currentPos: currentTop,
+            targetPos: otherTop,
+            dist: Math.abs(otherTop - currentTop),
+            newY: otherTop,
+            newH: h + (y - otherTop)
+          });
+        }
+
+        if (resizingBottom) {
+          edgeSnaps.push({
+            edge: 'bottom',
+            currentPos: currentBottom,
+            targetPos: otherTop,
+            dist: Math.abs(otherTop - currentBottom),
+            newY: y,
+            newH: otherTop - y
+          });
+          edgeSnaps.push({
+            edge: 'bottom',
+            currentPos: currentBottom,
+            targetPos: otherBottom,
+            dist: Math.abs(otherBottom - currentBottom),
+            newY: y,
+            newH: otherBottom - y
+          });
+        }
+      });
+
+      // Find best Y snap
+      const validSnaps = edgeSnaps.filter(s => s.dist < SNAP_THRESHOLD);
+      if (validSnaps.length > 0) {
+        const best = validSnaps.sort((a, b) => a.dist - b.dist)[0];
+        snapY = best.newY;
+        snapH = best.newH;
+        
+        const guidePos = best.targetPos;
+        if (!guides.find(g => g.type === 'y' && Math.abs(g.pos - guidePos) < 1)) {
+          guides.push({ type: 'y', value: snapY, pos: guidePos });
         }
       }
-    });
+    }
 
-    return { x: bestX, y: bestY, guides };
+    return { x: snapX, y: snapY, w: snapW, h: snapH, guides };
   }
 </script>
 
@@ -329,13 +568,15 @@
     {/if}
   </div>
 
-  <!-- Snap guides -->
+  <!-- Snap guides - positioned at the actual snap target location -->
   {#each snapGuides as guide}
     <div 
       class="snap-guide"
       class:vertical={guide.type === 'x'}
       class:horizontal={guide.type === 'y'}
-      style={guide.type === 'x' ? `left: {guide.value}px` : `top: {guide.value}px`}
+      style={guide.type === 'x' 
+        ? `left: ${guide.pos}px; top: 0; height: 100vh;` 
+        : `top: ${guide.pos}px; left: 0; width: 100vw;`}
     ></div>
   {/each}
 {/if}
@@ -385,6 +626,9 @@
   .resize-handle {
     position: absolute;
     z-index: 10;
+    background: transparent;
+    border: none;
+    padding: 0;
   }
 
   .resize-handle.n {
@@ -456,17 +700,18 @@
     background: #4a9eff;
     z-index: 9999;
     pointer-events: none;
+    box-shadow: 0 0 4px rgba(74, 158, 255, 0.5);
   }
 
   .snap-guide.vertical {
     width: 1px;
-    height: 100vh;
     top: 0;
+    bottom: 0;
   }
 
   .snap-guide.horizontal {
     height: 1px;
-    width: 100vw;
     left: 0;
+    right: 0;
   }
 </style>

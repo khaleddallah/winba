@@ -58,29 +58,14 @@
                     return;
                 }
                 
-                // Clear existing configs? Or just add?
-                // For now, let's clear existing store to fully replace layout?
-                // But we don't know IDs.
-                // If we clear store, manually created <Window> components might break or re-register?
-                // Let's assume re-register logic in Window.svelte handles store updates.
-                // But imported configs lack IDs, so we generate new ones.
+                // Update each window config using updateWindowConfig
+                for (const config of configs) {
+                    if (config.id) {
+                        const { id, ...rest } = config;
+                        updateWindowConfig(id, rest);
+                    }
+                }
 
-                // Update store
-                WindowsStore.update(store => {
-                    const newIds: string[] = [];
-                    const newConfigs: WinConfig[] = configs.map((config, index) => {
-                        const id = config.id || `imported-win-${Date.now()}-${index}`;
-                        newIds.push(id);
-                        return { ...config, id };
-                    });
-
-                    return {
-                        ...store,
-                        winConfigs: newConfigs,
-                        windowOrder: newIds,
-                        activeWindowId: newIds.length > 0 ? newIds[newIds.length - 1] : null
-                    };
-                });
             } catch (err) {
                 console.error("Failed to parse layout file", err);
             }
@@ -144,15 +129,6 @@
             </DropdownMenu.SubContent>
         </DropdownMenu.Sub>
 
-        <!-- Hidden file input for import -->
-        <input
-            bind:this={fileInput}
-            type="file"
-            accept=".json"
-            class="hidden"
-            onchange={importLayout}
-        />
-
         <!-- Window List -->
         <DropdownMenu.Sub>
             <DropdownMenu.SubTrigger>
@@ -180,3 +156,12 @@
         </DropdownMenu.Sub>
     </DropdownMenu.Content>
 </DropdownMenu.Root>
+
+<!-- Hidden file input for import - must be outside DropdownMenu so it persists in the DOM -->
+<input
+    bind:this={fileInput}
+    type="file"
+    accept=".json"
+    class="hidden"
+    onchange={importLayout}
+/>

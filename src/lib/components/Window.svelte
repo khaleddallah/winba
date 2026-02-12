@@ -4,13 +4,22 @@
     WindowsStore,
     bringToFront,
     updateWindowConfig,
+    registerWindow as registerWin,
+    unregisterWindow as unregisterWin,
   } from "$lib/core/WindowsStore";
   import { type WinConfig } from "../types";
   import { get } from "svelte/store";
 
   export let config: WinConfig;
-  export let windowId: string;
   export let zIndex: number = 1;
+
+  // Capture the window id once – this never changes and avoids a reactive cycle.
+  const configId = config.id;
+
+  // Keep config in sync with the store – any update via updateWindowConfig()
+  // will be reflected here automatically.
+  $: storeConfig = $WindowsStore.winConfigs.find(w => w.id === configId);
+  $: if (storeConfig) config = storeConfig;
 
   let windowEl: HTMLElement;
   let isDragging = false;
@@ -28,10 +37,9 @@
 
   // Reactive values from store
   $: currentBounds = config.bounds;
-  $: isActive = $WindowsStore.activeWindowId === windowId;
-  $: zIndex = $WindowsStore.windowOrder.indexOf(windowId) + 1;
-  $: isVisible =
-    $WindowsStore.winConfigs[windowId]?.visible ?? config.visible ?? true;
+  $: isActive = $WindowsStore.activeWindowId === configId;
+  $: zIndex = $WindowsStore.windowOrder.indexOf(configId) + 1;
+  $: isVisible = config.visible;
 
   onMount(() => {
     registerWindow();
@@ -46,27 +54,11 @@
   });
 
   function registerWindow() {
-    WindowsStore.update((store) => {
-      if (!store.winConfigs[windowId]) {
-        store.winConfigs[windowId] = config;
-        store.windowOrder = [...store.windowOrder, windowId];
-      }
-      return store;
-    });
+    registerWin(configId, config);
   }
 
   function unregisterWindow() {
-    WindowsStore.update((store) => {
-      delete store.winConfigs[windowId];
-      store.windowOrder = store.windowOrder.filter((id) => id !== windowId);
-      if (store.activeWindowId === windowId) {
-        store.activeWindowId =
-          store.windowOrder.length > 0
-            ? store.windowOrder[store.windowOrder.length - 1]
-            : null;
-      }
-      return store;
-    });
+    unregisterWin(configId);
   }
 
   function handleKeyDown(e: KeyboardEvent) {
@@ -79,7 +71,7 @@
 
   function onMouseDown(e: MouseEvent) {
     if (isVisible === false) return;
-    bringToFront(windowId);
+    bringToFront(configId);
 
     if (
       config.movable &&
@@ -145,14 +137,14 @@
     window.removeEventListener("mouseup", onDragEnd);
 
     // Update store with final bounds
-    updateWindowConfig(windowId, { bounds: currentBounds });
+    updateWindowConfig(configId, { bounds: currentBounds });
   }
 
   // Resize handlers
   function startResize(e: MouseEvent, handle: string) {
     if (!config.resizable) return;
     e.stopPropagation();
-    bringToFront(windowId);
+    bringToFront(configId);
 
     isResizing = true;
     resizeHandle = handle;
@@ -257,7 +249,7 @@
     window.removeEventListener("mousemove", onResizeMove);
     window.removeEventListener("mouseup", onResizeEnd);
 
-    updateWindowConfig(windowId, { bounds: currentBounds });
+    updateWindowConfig(configId, { bounds: currentBounds });
   }
 
   function updateBounds(
@@ -272,9 +264,9 @@
 
   function getOtherWindowsBounds() {
     const store = get(WindowsStore);
-    return Object.entries(store.winConfigs)
-      .filter(([id]) => id !== windowId)
-      .map(([_, cfg]) => cfg.bounds);
+    return store.winConfigs
+      .filter((w) => w.id !== configId)
+      .map((w) => w.bounds);
   }
 
   // Separate function for move snapping - simpler, only positions change

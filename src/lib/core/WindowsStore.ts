@@ -3,14 +3,14 @@ import { type WinConfig } from '../types';
 
 // Store state interface
 interface WindowsState {
-  winConfigs: Record<string, WinConfig>;
+  winConfigs: WinConfig[];
   windowOrder: string[];
   activeWindowId: string | null;
 }
 
 // Initial state
 const initialState: WindowsState = {
-  winConfigs: {},
+  winConfigs: [],
   windowOrder: [],
   activeWindowId: null
 };
@@ -22,14 +22,14 @@ export const WindowsStore: Writable<WindowsState> = writable(initialState);
 
 export function registerWindow(windowId: string, config: WinConfig): void {
   WindowsStore.update(store => {
-    if (store.winConfigs[windowId]) {
+    if (store.winConfigs.find(w => w.id === windowId)) {
       console.warn(`Window ${windowId} already registered`);
       return store;
     }
 
     return {
       ...store,
-      winConfigs: { ...store.winConfigs, [windowId]: config },
+      winConfigs: [...store.winConfigs, config],
       windowOrder: [...store.windowOrder, windowId]
     };
   });
@@ -37,10 +37,11 @@ export function registerWindow(windowId: string, config: WinConfig): void {
 
 export function unregisterWindow(windowId: string): void {
   WindowsStore.update(store => {
-    const { [windowId]: _, ...remainingConfigs } = store.winConfigs;
+    const remainingConfigs = store.winConfigs.filter(w => w.id !== windowId);
     const newOrder = store.windowOrder.filter(id => id !== windowId);
 
     return {
+      ...store,
       winConfigs: remainingConfigs,
       windowOrder: newOrder,
       activeWindowId: store.activeWindowId === windowId 
@@ -50,26 +51,27 @@ export function unregisterWindow(windowId: string): void {
   });
 }
 
-export function updateWindowConfig(windowId: string, config: Partial<WinConfig>): void {
+export function updateWindowConfig(windowId: string, config: WinConfig): void {
   WindowsStore.update(store => {
-    if (!store.winConfigs[windowId]) {
+    const windowExists = store.winConfigs.some(w => w.id === windowId);
+    if (!windowExists) {
       console.warn(`Window ${windowId} not found`);
       return store;
     }
 
+    
     return {
       ...store,
-      winConfigs: {
-        ...store.winConfigs,
-        [windowId]: { ...store.winConfigs[windowId], ...config }
-      }
+      winConfigs: store.winConfigs.map(w => 
+        w.id === windowId ? { ...w, ...config } : w
+      )
     };
   });
 }
 
 export function bringToFront(windowId: string): void {
   WindowsStore.update(store => {
-    if (!store.winConfigs[windowId]) return store;
+    if (!store.winConfigs.find(w => w.id === windowId)) return store;
 
     const newOrder = store.windowOrder.filter(id => id !== windowId);
     newOrder.push(windowId);
@@ -95,10 +97,10 @@ export function getWindowZIndex(windowId: string): number {
   return index >= 0 ? index + 1 : 0;
 }
 
-export function getAllWindows(): Record<string, WinConfig> {
+export function getAllWindows(): WinConfig[] {
   return get(WindowsStore).winConfigs;
 }
 
 export function getWindowConfig(windowId: string): WinConfig | undefined {
-  return get(WindowsStore).winConfigs[windowId];
+  return get(WindowsStore).winConfigs.find(w => w.id === windowId);
 }

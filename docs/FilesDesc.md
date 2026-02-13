@@ -53,7 +53,14 @@ A dedicated test page for development. Contains interactive tests and demos for 
 ## Components
 
 ### `src/lib/components/Window.svelte`
-Reusable window component with drag, resize, snap, and z-index logic. Handles registration with the window manager store, supports snapping to viewport and sibling windows, and exposes a slot for plugin content. Visual snap guides and keyboard modifiers included.
+Reusable window component with drag, resize, snap, and z-index logic. Now features a **floating header** design with a hamburger drag handle and a pill-shaped title. Supports **tabbed grouping**: dragging one window's header onto another groups them; dragging a tab out ungroups it. Handles visibility, focus, and local storage synchronization automatically via the store.
+
+### `src/lib/components/SettingsMenu.svelte` 
+Top-level settings dropdown (gear icon). Provides controls for:
+- **Theme Switching**: Toggle between light/dark modes.
+- **Layout Management**: Import/export current window configurations to JSON.
+- **Window Visibility**: Toggle individual windows on/off via checkboxes.
+
 
 ## Library Barrel
 
@@ -73,11 +80,17 @@ All live under `src/lib/types/`. They define the **contracts** — no logic, jus
 ### `bounds.ts`
 Defines `Bounds` (a rectangle: x, y, w, h) and `BoundsLimits` (optional min/max constraints on width and height). Used everywhere a window or panel needs a position and size.
 
+### `src/lib/types/winConfig.ts` -- NEW
+Defines **`WinConfig`**, the core configuration object for any window. Includes fields for:
+- Identity: `id`, `title`
+- Geometry: `bounds` (x, y, w, h), `boundsLimits`
+- State: `visible`, `zIndex`, `movable`, `resizable`
+- **Grouping**: `groupId` (shared ID for tabbed windows) and `activeInGroup` (boolean).
+
 ### `plugin.ts`
 The biggest type file. Defines:
-- **`WinConfig`** — how a plugin's window looks and behaves (title, bounds, movable, resizable…).
 - **`PluginApi`** — a named method a plugin exposes to other plugins.
-- **`PluginConfig`** — the full description of a plugin: its id, name, whether it has UI, its window config, its APIs, and its dependencies.
+- **`PluginConfig`** — the full description of a plugin: its id, name, whether it has UI, its `WinConfig` (imported), its APIs, and its dependencies.
 - **`PluginLife`** — an optional base class with lifecycle hooks (`onInit`, `onActivate`, `onDeactivate`, `onDestroy`). A plugin can extend this if it needs setup/teardown logic.
 
 ### `service.ts`
@@ -92,8 +105,16 @@ Defines `AppConfig` (which plugins to load), `UserLayoutEntry` (a saved window p
 
 Framework engine classes that live under `src/lib/core/`.
 
-### `WindowsStore.ts`
-Svelte store and helpers for window management. Tracks all open windows, their order (z-index), active window, and provides API for registration, unregistration, bringing to front, updating config, and querying window state. Used by `Window.svelte` for all window lifecycle and stacking logic.
+### `src/lib/core/WindowsStore.ts`
+Svelte store and centralized manager for the windowing system. 
+- **State**: Tracks `winConfigs` (all windows), `windowOrder` (stacking), `activeWindowId`, and `dropTargetId` (for grouping visual feedback).
+- **Persistence**: Automatically syncs window states to `localStorage` so layouts survive reloads.
+- **Actions**:
+  - `registerWindow` / `unregisterWindow`
+  - `bringToFront`
+  - `updateWindowConfig` (handles bounds, visibility, etc.)
+  - **Grouping Logic**: `groupWindows(targetId, sourceId)`, `ungroupWindow(id, position)`, `setActiveTab`.
+  - `setDropTarget`: manages the "hover over header" detection for grouping.
 
 
 ### `AppStore.ts`

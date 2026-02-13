@@ -754,8 +754,17 @@
           {/each}
         </div>
       {:else}
-        <div class="window-header">
-          <span class="window-title">{config.title}</span>
+        <div class="window-header tab-header">
+          <button
+            type="button"
+            class="tab-drag-handle"
+            aria-label="Drag window"
+            on:mousedown={(e) => { e.stopPropagation(); bringToFront(configId); startDrag(e); }}
+          >≡</button>
+          <div
+            class="tab-button tab-active"
+            style="cursor: default;"
+          >{config.title}</div>
         </div>
       {/if}
     {/if}
@@ -864,8 +873,8 @@
 
   .window-header {
     height: 32px;
-    background: linear-gradient(180deg, var(--secondary) 0%, var(--card) 100%);
-    border-bottom: 1px solid var(--border);
+    background: transparent;
+    /* border-bottom: 1px solid var(--border); */
     display: flex;
     align-items: center;
     justify-content: left;
@@ -927,11 +936,7 @@
     color: var(--foreground);
   }
 
-  .window-title {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--foreground);
-  }
+
 
   .window-content {
     flex: 1;

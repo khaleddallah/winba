@@ -859,7 +859,7 @@
     background: transparent;
     border: 1px solid var(--border);
     /*border-radius: 8px;*/
-    box-shadow: 0 4px 20px oklch(0 0 0 / 0.5);
+    box-shadow: 0px 0px 0px 0px oklch(from var(--border) l c h / 0.3);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -867,9 +867,9 @@
   }
 
   .window.active {
-    border-color: var(--border);
+    border-color: var(--ring);
     /* box-shadow: 0 4px 25px oklch(from var(--ring) l c h / 0.3); */
-    box-shadow: 0px 0px 5px 1px oklch(from var(--border) l c h / 0.3);
+    box-shadow: 0px 0px 5px 1px oklch(from var(--ring) l c h / 0.3);
   }
 
   .window-header {

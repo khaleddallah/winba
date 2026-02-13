@@ -867,8 +867,9 @@
   }
 
   .window.active {
-    border-color: var(--ring);
-    box-shadow: 0 4px 25px oklch(from var(--ring) l c h / 0.3);
+    border-color: var(--border);
+    /* box-shadow: 0 4px 25px oklch(from var(--ring) l c h / 0.3); */
+    box-shadow: 0px 0px 5px 1px oklch(from var(--border) l c h / 0.3);
   }
 
   .window-header {
@@ -917,12 +918,12 @@
     color: var(--muted-foreground);
     font-size: 12px;
     font-weight: 500;
-    padding: 2px 12px;
+    padding: 0px 12px;
     cursor: pointer;
     user-select: none;
     white-space: nowrap;
     transition: all 0.15s ease;
-    line-height: 22px;
+    line-height: 20px;
   }
 
   .tab-button:hover {

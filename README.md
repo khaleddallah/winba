@@ -1,8 +1,9 @@
-# WM7 — Windows Management Framework
-
-WM7 is a high-performance, extensible window management framework built for creating complex, desktop-like web applications. It provides a robust architecture for apps that require multi-view interfaces, such as IDEs, dashboard systems, or diagram editors.
+# Winba — Windows Management Framework
+![alt text](docs/logo.png)
+Winba is an extensible window management framework built for creating complex, desktop-like web applications. It provides a robust architecture for apps that require multi-view interfaces, such as IDEs, dashboard systems, or diagram editors.
 
 ![alt text](docs/image.png)
+
 ![alt text](docs/image2.png)
 
 ## Description
@@ -16,8 +17,6 @@ WM7 brings the power of a desktop operating system's windowing environment to th
 - **Persistent Layouts**: Window positions, sizes, and groups are automatically saved to `localStorage`.
 - **Reactive Architecture**: Built on Svelte stores for high-performance state updates.
 - **Theme Support**: Integrated light and dark modes with Catppuccin-inspired color palettes.
-- **Extensible Plugin System**: Designed to host independent "plugins" with their own UI and APIs.
-- **Developer-Centric**: Strong TypeScript typing for all core components and configurations.
 
 ## Install
 
@@ -36,79 +35,31 @@ Start the development server with Hot Module Replacement (HMR):
 bun run dev
 ```
 
-### Other Commands:
-- **Build**: `bun run build` — Create a production-ready build.
-- **Preview**: `bun run preview` — Locally preview the production build.
-- **Check**: `bun run check` — Run Svelte-check and TypeScript validation.
-
-### Configuration
-Windows can be configured via `windows.config.json` or dynamically through the `WindowsStore`.
-
-```json
-{
-  "id": "my-window",
-  "title": "Application Terminal",
-  "bounds": { "x": 100, "y": 100, "w": 600, "h": 400 },
-  "boundsLimits": { "minW": 300, "minH": 200 },
-  "hasHeader": true,
-  "resizable": true,
-  "movable": true,
-  "visible": true
-}
-```
-
 ## Development
 
 ### Adding a New Window
 To create a new window:
-```svelte
+```html
 <script>
   import Window from '$lib/components/Window.svelte';
   // Retrieve config from store or define locally
+  const myConfig = {
+    id: 'my-window',
+    title: 'Application Terminal',
+    bounds: { x: 100, y: 100, w: 600, h: 400 },
+    boundsLimits: { minW: 300, minH: 200 },
+    hasHeader: true,
+    resizable: true,
+    movable: true,
+    visible: true,
+    groupId: ""
+  };
 </script>
 
 <Window config={myConfig}>
     <h1>Hello World</h1>
 </Window>
 ```
-
-### State Management (AppStore)
-Share state across plugins and components using the centralized `AppStore`.
-```typescript
-import { AppStore } from '$lib/core/AppStore';
-
-const appStore = new AppStore();
-
-// Set a value
-appStore.set('user:preferences', { theme: 'dark' });
-
-// Subscribe to changes
-const unsubscribe = appStore.subscribe('user:preferences', (value) => {
-    console.log('Preferences updated:', value);
-});
-```
-
-### Event Bus
-Use `EventBus` for transient, fire-and-forget messaging between components.
-```typescript
-import { EventBus } from '$lib/core/EventBus';
-
-const bus = new EventBus();
-
-// Emit an event
-bus.emit('file:saved', { filename: 'doc.txt' });
-
-// Listen for an event
-bus.on('file:saved', (payload) => {
-    console.log('File saved:', payload.filename);
-});
-```
-
-### Adding a New Theme
-1. Open `src/app.css`.
-2. Define a new theme variant using CSS variables (using Oklch colors for best results).
-3. Register the theme in `src/lib/core/ThemeSwitcher.ts` by adding it to the `THEMES` array.
-4. The theme will automatically appear in the Settings menu.
 
 ## Tech Stack
 

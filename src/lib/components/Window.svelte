@@ -847,10 +847,10 @@
 <style>
   .window {
     position: absolute;
-    background: #00000000;
-    border: 1px solid #333;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    background: transparent;
+    border: 1px solid var(--border);
+    /*border-radius: 8px;*/
+    box-shadow: 0 4px 20px oklch(0 0 0 / 0.5);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -858,17 +858,17 @@
   }
 
   .window.active {
-    border-color: #4a9eff;
-    box-shadow: 0 4px 25px rgba(74, 158, 255, 0.3);
+    border-color: var(--ring);
+    box-shadow: 0 4px 25px oklch(from var(--ring) l c h / 0.3);
   }
 
   .window-header {
     height: 32px;
-    background: linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%);
-    border-bottom: 1px solid #333;
+    background: linear-gradient(180deg, var(--secondary) 0%, var(--card) 100%);
+    border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: left;
     padding: 0 12px;
     cursor: default;
     user-select: none;
@@ -884,7 +884,7 @@
   .tab-drag-handle {
     background: none;
     border: none;
-    color: #888;
+    color: var(--muted-foreground);
     font-size: 16px;
     cursor: grab;
     padding: 0 6px;
@@ -894,7 +894,7 @@
   }
 
   .tab-drag-handle:hover {
-    color: #ccc;
+    color: var(--foreground);
   }
 
   .tab-drag-handle:active {
@@ -902,10 +902,10 @@
   }
 
   .tab-button {
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: var(--accent);
+    border: 1px solid var(--border);
     border-radius: 14px;
-    color: #999;
+    color: var(--muted-foreground);
     font-size: 12px;
     font-weight: 500;
     padding: 2px 12px;
@@ -917,20 +917,20 @@
   }
 
   .tab-button:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ccc;
+    background: var(--input);
+    color: var(--foreground);
   }
 
   .tab-button.tab-active {
-    background: rgba(74, 158, 255, 0.25);
-    border-color: rgba(74, 158, 255, 0.5);
-    color: #e0e0e0;
+    background: oklch(from var(--ring) l c h / 0.25);
+    border-color: oklch(from var(--ring) l c h / 0.5);
+    color: var(--foreground);
   }
 
   .window-title {
     font-size: 13px;
     font-weight: 500;
-    color: #e0e0e0;
+    color: var(--foreground);
   }
 
   .window-content {
@@ -1013,10 +1013,10 @@
 
   .snap-guide {
     position: fixed;
-    background: #4a9eff;
+    background: var(--ring);
     z-index: 9999;
     pointer-events: none;
-    box-shadow: 0 0 4px rgba(74, 158, 255, 0.5);
+    box-shadow: 0 0 4px oklch(from var(--ring) l c h / 0.5);
   }
 
   .snap-guide.vertical {
@@ -1036,9 +1036,9 @@
     position: absolute;
     pointer-events: none;
     border-radius: 8px 8px 0 0;
-    border: 2px solid rgba(74, 158, 255, 0.8);
-    background: rgba(74, 158, 255, 0.15);
-    box-shadow: 0 0 12px rgba(74, 158, 255, 0.4);
+    border: 2px solid oklch(from var(--ring) l c h / 0.8);
+    background: oklch(from var(--ring) l c h / 0.15);
+    box-shadow: 0 0 12px oklch(from var(--ring) l c h / 0.4);
     opacity: 0;
     transition: opacity 0.15s ease;
   }

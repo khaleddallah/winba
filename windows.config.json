@@ -1,40 +1,54 @@
-[
-  {
-    "id": "window1",
-    "title": "My Window",
-    "bounds": {
-      "x": 100,
-      "y": 100,
-      "w": 400,
-      "h": 300
+{
+  "id": "app-root",
+  "activeWindowId": "window1",
+  "mwindows": [
+    {
+      "id": "window1",
+      "movable": true,
+      "resizable": true,
+      "bounds": {
+        "x": 100,
+        "y": 100,
+        "w": 400,
+        "h": 300
+      },
+      "boundsLimits": {
+        "minW": 200,
+        "minH": 150
+      },
+      "zIndex": 1,
+      "mtabs": [
+        {
+          "id": "tab1",
+          "title": "My Window",
+          "active": true,
+          "component": "demo-content-1"
+        }
+      ]
     },
-    "boundsLimits": {
-      "minW": 200,
-      "minH": 150
-    },
-    "hasHeader": true,
-    "movable": true,
-    "resizable": true,
-    "visible": true,
-    "groupId": ""
-  },
-  {
-    "id": "window2",
-    "title": "My Window2",
-    "bounds": {
-      "x": 550,
-      "y": 100,
-      "w": 400,
-      "h": 300
-    },
-    "boundsLimits": {
-      "minW": 200,
-      "minH": 150
-    },
-    "hasHeader": true,
-    "movable": true,
-    "resizable": true,
-    "visible": true,
-    "groupId": ""
-  }
-]
+    {
+      "id": "window2",
+      "movable": true,
+      "resizable": true,
+      "bounds": {
+        "x": 550,
+        "y": 100,
+        "w": 400,
+        "h": 300
+      },
+      "boundsLimits": {
+        "minW": 200,
+        "minH": 150
+      },
+      "zIndex": 2,
+      "mtabs": [
+        {
+          "id": "tab2",
+          "title": "My Window2",
+          "active": true,
+          "component": "demo-content-2"
+        }
+      ]
+    }
+  ]
+}

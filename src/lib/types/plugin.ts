@@ -1,4 +1,3 @@
-import type { WinConfig } from './winConfig.js';
 
 // ── Plugin API (methods a plugin exposes to other plugins) ──
 
@@ -13,7 +12,6 @@ export interface PluginConfig {
   id: string;
   name: string;
   hasUI: boolean;
-  winConfig?: WinConfig;
   apis?: PluginApi[];
   dependencies?: string[];
 }

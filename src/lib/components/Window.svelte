@@ -326,7 +326,7 @@
   }
   
   function onTabMouseDown(e: MouseEvent, tabId: string) {
-    if (tabs.length === 1 && config.movable) {
+    if (visibleTabs.length === 1 && config.movable) {
         // If only one tab, treat as moving the window
         startDrag(e);
         return;
@@ -345,7 +345,7 @@
     if (!isTearingTab) return;
     const dist = Math.hypot(e.clientX - tearStartX, e.clientY - tearStartY);
     if (dist > TEAR_THRESHOLD) {
-        if (tearTabId) {
+        if (tearTabId && visibleTabs.length > 1) {
             ungroupTab(id, tearTabId, { x: e.clientX, y: e.clientY, w: 400, h: 300 });
         }
         cleanupTear();

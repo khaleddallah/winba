@@ -64,6 +64,8 @@
   }
 
   let windowEl: HTMLElement;
+  let hoveredDropHeader: HTMLElement | null = null;
+  let hoveredDropWindowId: string | null = null;
   let isDragging = false;
   let isResizing = false;
   let resizeHandle: string = "";
@@ -120,6 +122,10 @@
     startY = e.clientY;
     startBounds = { ...currentBounds };
 
+    if (windowEl) {
+      windowEl.style.pointerEvents = 'none';
+    }
+
     document.body.style.userSelect = "none";
     window.addEventListener("mousemove", onDragMove);
     window.addEventListener("mouseup", onDragEnd);
@@ -157,6 +163,16 @@
     newY = Math.max(0, Math.min(newY, viewport.h - currentBounds.h));
 
     updateWindow(id, { bounds: { ...currentBounds, x: newX, y: newY } });
+
+    const next = findDropHeader(e.clientX, e.clientY);
+    if (hoveredDropHeader && hoveredDropHeader !== next?.header) {
+      hoveredDropHeader.classList.remove('drop-target');
+    }
+    if (next?.header && next.windowId !== hoveredDropWindowId) {
+      next.header.classList.add('drop-target');
+    }
+    hoveredDropHeader = next?.header ?? null;
+    hoveredDropWindowId = next?.windowId ?? null;
   }
 
   function onDragEnd(e: MouseEvent) {
@@ -165,6 +181,16 @@
     document.body.style.userSelect = "";
     window.removeEventListener("mousemove", onDragMove);
     window.removeEventListener("mouseup", onDragEnd);
+
+    if (hoveredDropHeader) {
+      hoveredDropHeader.classList.remove('drop-target');
+    }
+    hoveredDropHeader = null;
+    hoveredDropWindowId = null;
+
+    if (windowEl) {
+      windowEl.style.pointerEvents = '';
+    }
     
     const dropTarget = findDropTarget(e.clientX, e.clientY);
     if (dropTarget && dropTarget !== id) {
@@ -179,8 +205,20 @@
           if (header) {
              const win = header.closest('.window') as HTMLElement;
              const wid = win?.dataset.windowId;
-             if (wid) return wid;
+             if (wid && wid !== id) return wid;
           }
+      }
+      return null;
+  }
+
+  function findDropHeader(x: number, y: number): { windowId: string; header: HTMLElement } | null {
+      const elements = document.elementsFromPoint(x, y);
+      for (const el of elements) {
+          const header = el.closest('.window-header') as HTMLElement | null;
+          if (!header) continue;
+          const win = header.closest('.window') as HTMLElement | null;
+          const wid = win?.dataset.windowId;
+          if (wid && wid !== id) return { windowId: wid, header };
       }
       return null;
   }
@@ -560,5 +598,15 @@
   }
   :global(.dark) .window.active {
     border-color: #60a5fa;
+  }
+
+  :global(.window-header.drop-target) {
+    box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.8);
+    background: rgba(59, 130, 246, 0.10);
+    transition: box-shadow 120ms ease, background-color 120ms ease;
+  }
+  :global(.dark .window-header.drop-target) {
+    box-shadow: inset 0 0 0 2px rgba(96, 165, 250, 0.85);
+    background: rgba(96, 165, 250, 0.12);
   }
 </style>

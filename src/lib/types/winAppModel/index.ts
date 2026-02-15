@@ -7,6 +7,7 @@ export interface Tnode {
 export interface MApp extends Tnode {
   mwindows: MWindow[];
   activeWindowId: string | null; // Changed to nullable for safety
+  removedWindowIds?: string[];
 }
 
 export interface MWindow extends Tnode {

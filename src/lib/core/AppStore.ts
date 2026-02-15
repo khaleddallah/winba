@@ -4,11 +4,37 @@ import type { Bounds } from '../types/bounds';
 
 const STORAGE_KEY = 'wm7_app_state';
 
+function sanitizeState(state: MApp): MApp {
+  const removed = new Set(state.removedWindowIds ?? []);
+  const seenTabs = new Set<string>();
+  const mwindows = state.mwindows
+    .filter(w => !removed.has(w.id))
+    .map(w => {
+      const mtabs = w.mtabs.filter(t => {
+        if (seenTabs.has(t.id)) return false;
+        seenTabs.add(t.id);
+        return true;
+      });
+      return { ...w, mtabs };
+    })
+    .filter(w => w.mtabs.length > 0);
+
+  const activeWindowId = mwindows.some(w => w.id === state.activeWindowId) ? state.activeWindowId : (mwindows[0]?.id ?? null);
+
+  return {
+    ...state,
+    mwindows,
+    activeWindowId,
+    removedWindowIds: [...removed]
+  };
+}
+
 // Initial state
 const initialState: MApp = {
   id: 'app-root',
   mwindows: [],
-  activeWindowId: null
+  activeWindowId: null,
+  removedWindowIds: []
 };
 
 // Create the store
@@ -40,9 +66,9 @@ export function loadState(): MApp | null {
 export function initApp(defaultConfig?: MApp) {
   const stored = loadState();
   if (stored) {
-    AppStore.set(stored);
+    AppStore.set(sanitizeState(stored));
   } else if (defaultConfig) {
-    AppStore.set(defaultConfig);
+    AppStore.set(sanitizeState(defaultConfig));
   }
   
   // Subscribe to changes to persist state
@@ -56,6 +82,9 @@ export function initApp(defaultConfig?: MApp) {
 
 export function registerWindow(window: MWindow) {
   AppStore.update(app => {
+    if (app.removedWindowIds?.includes(window.id)) {
+      return app;
+    }
     const existing = app.mwindows.find(w => w.id === window.id);
     if (existing) {
         // If window exists, we update it with the new properties (e.g. from props)
@@ -80,6 +109,17 @@ export function registerWindow(window: MWindow) {
 
 export function registerTab(windowId: string, tab: MTab) {
   AppStore.update(app => {
+    if (app.removedWindowIds?.includes(windowId)) {
+      return app;
+    }
+
+    const existingOwner = app.mwindows.find(w => w.mtabs.some(t => t.id === tab.id));
+    if (existingOwner && existingOwner.id !== windowId) {
+      // Tab already belongs to another window (e.g. was torn off / merged). Do not duplicate it
+      // back into the declarative window on reload.
+      return app;
+    }
+
     const win = app.mwindows.find(w => w.id === windowId);
     if (!win) {
         console.warn(`Cannot register tab ${tab.id}: Window ${windowId} not found`);
@@ -203,7 +243,8 @@ export function groupWindows(targetWindowId: string, sourceWindowId: string) {
     return {
         ...app,
         mwindows: remainingWindows,
-        activeWindowId: targetWindowId
+        activeWindowId: targetWindowId,
+        removedWindowIds: [...new Set([...(app.removedWindowIds ?? []), sourceWindowId])]
     };
   });
 }

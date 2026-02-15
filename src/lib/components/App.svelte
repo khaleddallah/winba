@@ -37,11 +37,11 @@
       // initApp cleanup if needed, but for now we init once.
   });
   
-  $: dynamicWindows = $AppStore.mwindows.filter(w => !declarativeWindows.has(w.id));
   // We need this reactive statement to re-run when declarativeWindows changes.
   // But Set mutation doesn't trigger it.
   // So we depend on $declarativeIdsString
-  $: _ids = $declarativeIdsString; 
+  $: _ids = $declarativeIdsString;
+  $: dynamicWindows = $AppStore.mwindows.filter(w => !declarativeWindows.has(w.id));
 </script>
 
 <div class="app-container relative w-full h-full overflow-hidden bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
@@ -50,34 +50,6 @@
   
   <!-- Dynamic Windows (e.g. from tearing) -->
   {#each dynamicWindows as win (win.id)}
-      <WindowComponent id={win.id} bounds={win.bounds}>
-           <!-- 
-             Dynamic windows created by tearing don't have declarative slots.
-             They rely on `Tab` component's internal logic or `component` string.
-             However, `Tab` component strictly renders `<slot />` only.
-             So we need a way to render content for dynamic tabs.
-             
-             In this refactor, `Tab` checks if it's active.
-             But here, we don't have `Tab` children for dynamic windows! 
-             We iterate mtabs in window header, but CONTENT is missing.
-             
-             Fix: `Window.svelte` header iterates tabs.
-             But `Window.svelte` content is `<slot />`.
-             
-             If we use `<Window>` here with empty slot, no content is shown.
-             
-             We need to reconstruct `Tab` components for dynamic windows.
-           -->
-           {#each win.mtabs as tab (tab.id)}
-               <Tab id={tab.id} title={tab.title} component={tab.component} active={tab.active}>
-                   <!-- Content? We don't have the original slot content. -->
-                   <div class="p-4 text-gray-500 italic">
-                       Dynamic Window Content (moved)
-                       <br/>
-                       Component: {tab.component || 'None'}
-                   </div>
-               </Tab>
-           {/each}
-      </WindowComponent>
+      <WindowComponent id={win.id} bounds={win.bounds} declarative={false} />
   {/each}
 </div>

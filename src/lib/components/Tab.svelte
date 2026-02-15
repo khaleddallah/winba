@@ -2,6 +2,8 @@
   import { onMount, getContext } from "svelte";
   import { AppStore, registerTab } from "$lib/core/AppStore";
   import type { MTab } from "$lib/types/winAppModel";
+  import { onDestroy } from "svelte";
+  import { registerTabNode, unregisterTabNode } from "$lib/core/TabPortal";
   
   export let id: string;
   export let title: string;
@@ -10,33 +12,44 @@
   export let active: boolean = false;
   export let visible: boolean = false;
   
-  const windowId = getContext("windowId") as string;
+  const contextWindowId = getContext("windowId") as string | undefined;
   
   // Register immediately
-  if (windowId) {
-      registerTab(windowId, {
-          id,
-          title,
-          visible,
-          active,
-          component
-      });
-  } else {
-      console.warn("Tab component used outside of Window context");
+  if (contextWindowId) {
+    registerTab(contextWindowId, {
+      id,
+      title,
+      visible,
+      active,
+      component
+    });
   }
 
   onMount(() => {
   });
   
   // Reactive derived state to check if this tab is active in the store
-  $: win = $AppStore.mwindows.find(w => w.id === windowId);
+  $: ownerWindowId = ($AppStore.mwindows.find(w => w.mtabs.some(t => t.id === id))?.id) ?? contextWindowId;
+  $: win = ownerWindowId ? $AppStore.mwindows.find(w => w.id === ownerWindowId) : undefined;
   $: tabState = win?.mtabs.find(t => t.id === id);
   $: isActive = tabState?.active ?? active;
 
+  let tabEl: HTMLElement;
+
+  $: if (tabEl) {
+    registerTabNode(id, tabEl);
+  }
+
+  onDestroy(() => {
+    unregisterTabNode(id, tabEl);
+  });
+
 </script>
 
-{#if isActive}
-<div class="tab-content w-full h-full p-4 overflow-auto text-slate-800 dark:text-slate-200">
-    <slot />
+<div
+  bind:this={tabEl}
+  class="tab-content w-full h-full p-4 overflow-auto text-slate-800 dark:text-slate-200"
+  style="display: {isActive ? 'block' : 'none'};"
+>
+  <slot />
 </div>
-{/if}

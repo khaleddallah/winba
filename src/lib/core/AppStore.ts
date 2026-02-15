@@ -65,7 +65,7 @@ export function registerWindow(window: MWindow) {
         // If we change code (add a window), we want it to appear.
         return {
             ...app,
-            mwindows: app.mwindows.map(w => w.id === window.id ? { ...existing, ...window, bounds: existing.bounds } : w)
+            mwindows: app.mwindows.map(w => w.id === window.id ? { ...existing, ...window, bounds: existing.bounds, mtabs: existing.mtabs } : w)
             // We keep existing bounds/zIndex to respect user interaction (persistence).
             // But we update other props like movable/resizable if changed in code.
             // If the window is new in code but old in storage, this merges them.

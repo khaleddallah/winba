@@ -5,6 +5,8 @@
   import type { Bounds } from "$lib/types/bounds";
   import { get } from 'svelte/store';
   import Tab from "./Tab.svelte";
+  import { getContext } from "svelte";
+  import { mountTabNode, moveTabNodeToStash } from "$lib/core/TabPortal";
   
   // Props for declarative usage
   export let id: string;
@@ -12,8 +14,14 @@
   export let movable: boolean = true;
   export let resizable: boolean = true;
   export let zIndex: number = 1;
+  export let declarative: boolean = true;
   
   setContext("windowId", id);
+
+  const registerDeclarative = getContext('registerDeclarative') as ((id: string) => void) | undefined;
+  if (declarative && registerDeclarative) {
+      registerDeclarative(id);
+  }
   
   // Register immediately so tabs can find us
   registerWindow({
@@ -39,6 +47,21 @@
   $: currentZIndex = config?.zIndex || zIndex;
   $: tabs = config?.mtabs || [];
   $: activeTab = tabs.find(t => t.active) || tabs[0]; 
+
+  let contentEl: HTMLElement;
+  let lastMountedTabId: string | null = null;
+
+  $: if (!declarative && contentEl) {
+    const nextTabId = activeTab?.id ?? null;
+    if (lastMountedTabId && lastMountedTabId !== nextTabId) {
+      moveTabNodeToStash(lastMountedTabId);
+    }
+    contentEl.replaceChildren();
+    if (nextTabId) {
+      mountTabNode(nextTabId, contentEl);
+    }
+    lastMountedTabId = nextTabId;
+  }
 
   let windowEl: HTMLElement;
   let isDragging = false;
@@ -452,12 +475,11 @@
 
     <!-- Content -->
     <div class="window-content flex-1 overflow-auto relative bg-white dark:bg-slate-800">
-      <!-- 
-         We render the slot, which contains Tab components.
-         Tab components themselves will check if they are active and render accordingly.
-         This allows the declarative children to determine content. 
-      -->
-      <slot />
+      {#if declarative}
+        <slot />
+      {:else}
+        <div class="w-full h-full" bind:this={contentEl}></div>
+      {/if}
     </div>
 
     <!-- Resize Handles -->

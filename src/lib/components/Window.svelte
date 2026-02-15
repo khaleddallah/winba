@@ -46,7 +46,15 @@
   $: isActive = $AppStore.activeWindowId === id;
   $: currentZIndex = config?.zIndex || zIndex;
   $: tabs = config?.mtabs || [];
-  $: activeTab = tabs.find(t => t.active) || tabs[0]; 
+  $: visibleTabs = tabs.filter((t) => t.visible ?? true);
+  $: activeTab = visibleTabs.find(t => t.active) || visibleTabs[0];
+
+  $: if (config && visibleTabs.length > 0) {
+    const hasActiveVisible = visibleTabs.some((t) => t.active);
+    if (!hasActiveVisible) {
+      setActiveTab(id, visibleTabs[0].id);
+    }
+  }
 
   let contentEl: HTMLElement;
   let lastMountedTabId: string | null = null;
@@ -472,7 +480,7 @@
 
 </script>
 
-{#if config}
+{#if config && (tabs.length === 0 || visibleTabs.length > 0)}
   <div
     bind:this={windowEl}
     role="dialog"
@@ -497,7 +505,7 @@
        
        <!-- Tabs -->
        <div class="flex-1 flex overflow-hidden">
-         {#each tabs as tab (tab.id)}
+         {#each visibleTabs as tab (tab.id)}
            <button
              class="px-3 py-1 text-sm border-r border-gray-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-700 truncate max-w-[150px]"
              class:bg-white={tab.active}

@@ -58,9 +58,9 @@
         for (const mwindow of app.mwindows) {
             for (const mtab of mwindow.mtabs) {
                 if (mtab.id === tabId) {
-                    mtab.visible = !mtab.visible;
+                    mtab.visible = !(mtab.visible ?? true);
                     console.log("2 Tab visibility toggled", mtab.id, mtab.visible);
-                    AppStore.set(app);
+                    AppStore.set({ ...app });
                     return;
                 }
             }
@@ -203,13 +203,13 @@
                 {#each $AppStore.mwindows as window}
                     {#each window.mtabs as tab}
                         <DropdownMenu.CheckboxItem
-                            checked={true} 
+                            checked={tab.visible ?? true} 
                             onclick={(e) => {
                                 e.preventDefault();
                                 toggleTabVisibility(tab.id);
                             }}
                         >
-                            Tab - {window.id}  
+                            {tab.id}  
                             <!-- {window.mtabs.map(t => t.title).join(', ')} -->
                         </DropdownMenu.CheckboxItem>
                     {/each}

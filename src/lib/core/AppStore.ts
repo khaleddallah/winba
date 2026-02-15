@@ -134,7 +134,12 @@ export function registerTab(windowId: string, tab: MTab) {
             ...app,
             mwindows: app.mwindows.map(w => w.id === windowId ? {
                 ...w,
-                mtabs: w.mtabs.map(t => t.id === tab.id ? { ...existingTab, ...tab } : t)
+                mtabs: w.mtabs.map(t => t.id === tab.id ? {
+                  ...existingTab,
+                  ...tab,
+                  visible: existingTab.visible ?? tab.visible,
+                  active: existingTab.active ?? tab.active,
+                } : t)
             } : w)
         };
     }

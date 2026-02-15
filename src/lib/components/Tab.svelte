@@ -10,7 +10,7 @@
   // component prop is less relevant now as content is in slot, but kept for model compatibility
   export let component: string = ""; 
   export let active: boolean = false;
-  export let visible: boolean = false;
+  export let visible: boolean = true;
   
   const contextWindowId = getContext("windowId") as string | undefined;
   
@@ -33,6 +33,7 @@
   $: win = ownerWindowId ? $AppStore.mwindows.find(w => w.id === ownerWindowId) : undefined;
   $: tabState = win?.mtabs.find(t => t.id === id);
   $: isActive = tabState?.active ?? active;
+  $: isVisible = tabState?.visible ?? visible;
 
   let tabEl: HTMLElement;
 
@@ -49,7 +50,7 @@
 <div
   bind:this={tabEl}
   class="tab-content w-full h-full p-4 overflow-auto text-slate-800 dark:text-slate-200"
-  style="display: {isActive ? 'block' : 'none'};"
+  style="display: {isActive && isVisible ? 'block' : 'none'};"
 >
   <slot />
 </div>

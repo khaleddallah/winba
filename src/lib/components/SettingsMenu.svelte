@@ -51,29 +51,30 @@
     // Wait, let me check my types again.
     // MTab has `visible?: boolean`.
     
-    function toggleTabVisibility(tabId: string) {
-        // find the tab in app store
+    function toggleTabVisibility(tabId: string, visible?: boolean) {
         console.log("Tab visibility toggled", tabId);
-        const app = get(AppStore);
-        for (const mwindow of app.mwindows) {
-            for (const mtab of mwindow.mtabs) {
-                if (mtab.id === tabId) {
-                    mtab.visible = !(mtab.visible ?? true);
-                    console.log("2 Tab visibility toggled", mtab.id, mtab.visible);
-                    AppStore.set({ ...app });
-                    return;
-                }
+        AppStore.update((app) => {
+            for (const mwindow of app.mwindows) {
+                const idx = mwindow.mtabs.findIndex((t) => t.id === tabId);
+                if (idx === -1) continue;
+
+                const current = mwindow.mtabs[idx];
+                const nextVisible = visible ?? !(current.visible ?? true);
+                console.log("2 Tab visibility toggled", current.id, nextVisible);
+
+                const nextTab = { ...current, visible: nextVisible };
+                const nextTabs = [...mwindow.mtabs];
+                nextTabs[idx] = nextTab;
+
+                const nextWindow = { ...mwindow, mtabs: nextTabs };
+                return {
+                    ...app,
+                    mwindows: app.mwindows.map((w) => (w.id === mwindow.id ? nextWindow : w)),
+                };
             }
-        }
 
-
-        // Toggle visibility of ALL tabs in the window?
-        // Or if we modify MWindow to have `visible` (even if not in original model doc, it's practical).
-        // Let's stick to modifying tabs for now as per model hint or add visible to window if needed.
-        // Actually, let's re-read the model doc provided in context.
-        // "if not mtabs, then window is invisible"
-        // This suggests visibility IS the presence of tabs. 
-        // So to "hide", we maybe should clear tabs? But that loses state.
+            return app;
+        });
         // Let's add a `minimized` or `visible` property to MWindow in our implementation for practicality, 
         // even if it diverges slightly from the strict model doc (which might be high level).
         // OR, we can just toggle `visible` on all tabs.
@@ -201,12 +202,12 @@
             </DropdownMenu.SubTrigger>
             <DropdownMenu.SubContent>
                 {#each $AppStore.mwindows as window}
-                    {#each window.mtabs as tab}
+                    {#each window.mtabs as tab (tab.id)}
                         <DropdownMenu.CheckboxItem
                             checked={tab.visible ?? true} 
-                            onclick={(e) => {
+                            onSelect={(e) => {
                                 e.preventDefault();
-                                toggleTabVisibility(tab.id);
+                                toggleTabVisibility(tab.id, !(tab.visible ?? true));
                             }}
                         >
                             {tab.id}  

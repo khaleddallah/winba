@@ -6,9 +6,10 @@
   import { get } from 'svelte/store';
   import Tab from "./Tab.svelte";
   import { getContext } from "svelte";
-  import { mountTabNode, moveTabNodeToStash } from "$lib/core/TabPortal";
+  import { mountTabNode, moveTabNodeToStash, portalState } from "$lib/core/TabPortal";
   
   // Props for declarative usage
+
   export let id: string;
   export let bounds: Bounds;
   export let movable: boolean = true;
@@ -59,18 +60,31 @@
   let contentEl: HTMLElement;
   let lastMountedTabId: string | null = null;
 
-  $: if (!declarative && contentEl) {
+  $: if (contentEl && $portalState >= 0) {
     const nextTabId = activeTab?.id ?? null;
+    
     if (lastMountedTabId && lastMountedTabId !== nextTabId) {
       moveTabNodeToStash(lastMountedTabId);
     }
-    contentEl.replaceChildren();
-    if (nextTabId) {
-      mountTabNode(nextTabId, contentEl);
-    }
-    lastMountedTabId = nextTabId;
-  }
 
+    if (nextTabId) {
+      // Only attempt mount if content is missing or ID changed
+      // This prevents flashing/resetting state on unrelated portal updates
+      if (lastMountedTabId !== nextTabId || contentEl.childElementCount === 0) {
+        contentEl.replaceChildren();
+        const success = mountTabNode(nextTabId, contentEl);
+        if (success) {
+          lastMountedTabId = nextTabId;
+        } else {
+          // Node not ready yet; ensure we retry on next portalState update
+          lastMountedTabId = null;
+        }
+      }
+    } else {
+      contentEl.replaceChildren();
+      lastMountedTabId = null;
+    }
+  }
   let windowEl: HTMLElement;
   let hoveredDropHeader: HTMLElement | null = null;
   let hoveredDropWindowId: string | null = null;
@@ -480,6 +494,11 @@
 
 </script>
 
+<!-- Always render slot to keep declarative children alive even if window is merged/closed -->
+<div style="display: none;" hidden>
+  <slot />
+</div>
+
 {#if config && (tabs.length === 0 || visibleTabs.length > 0)}
   <div
     bind:this={windowEl}
@@ -521,11 +540,8 @@
 
     <!-- Content -->
     <div class="window-content flex-1 overflow-auto relative bg-white dark:bg-slate-800">
-      {#if declarative}
-        <slot />
-      {:else}
-        <div class="w-full h-full" bind:this={contentEl}></div>
-      {/if}
+      <!-- All tab content (declarative or dynamic) is mounted here via Portal -->
+      <div class="w-full h-full" bind:this={contentEl}></div>
     </div>
 
     <!-- Resize Handles -->

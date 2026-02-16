@@ -1,4 +1,7 @@
+import { writable } from 'svelte/store';
+
 const tabNodes = new Map<string, HTMLElement>();
+export const portalState = writable(0);
 
 let stashContainer: HTMLElement | null = null;
 
@@ -16,6 +19,7 @@ function ensureStashContainer(): HTMLElement {
 
 export function registerTabNode(tabId: string, el: HTMLElement) {
   tabNodes.set(tabId, el);
+  portalState.update(n => n + 1);
 }
 
 export function unregisterTabNode(tabId: string, el?: HTMLElement) {
@@ -23,6 +27,7 @@ export function unregisterTabNode(tabId: string, el?: HTMLElement) {
   if (!existing) return;
   if (el && existing !== el) return;
   tabNodes.delete(tabId);
+  portalState.update(n => n + 1);
 }
 
 export function getTabNode(tabId: string): HTMLElement | undefined {

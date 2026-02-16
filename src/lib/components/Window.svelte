@@ -31,6 +31,7 @@
       resizable,
       bounds,
       zIndex,
+      isDeclarative: declarative,
       mtabs: [] // Tabs will register themselves
   });
 

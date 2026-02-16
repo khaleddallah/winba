@@ -7,8 +7,6 @@
   
   export let id: string;
   export let title: string;
-  // component prop is less relevant now as content is in slot, but kept for model compatibility
-  export let component: string = ""; 
   export let active: boolean = false;
   export let visible: boolean = true;
   
@@ -20,8 +18,7 @@
       id,
       title,
       visible,
-      active,
-      component
+      active
     });
   }
 

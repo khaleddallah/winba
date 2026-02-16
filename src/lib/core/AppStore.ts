@@ -245,11 +245,17 @@ export function groupWindows(targetWindowId: string, sourceWindowId: string) {
         w.id === targetWindowId ? updatedTargetWin : w
     );
     
+    // Only track removal if the window was declarative
+    const removedWindowIds = app.removedWindowIds ?? [];
+    const nextRemoved = sourceWin.isDeclarative 
+        ? [...new Set([...removedWindowIds, sourceWindowId])]
+        : removedWindowIds;
+    
     return {
         ...app,
         mwindows: remainingWindows,
         activeWindowId: targetWindowId,
-        removedWindowIds: [...new Set([...(app.removedWindowIds ?? []), sourceWindowId])]
+        removedWindowIds: nextRemoved
     };
   });
 }
@@ -277,6 +283,7 @@ export function ungroupTab(windowId: string, tabId: string, newBounds: Bounds) {
             bounds: newBounds,
             boundsLimits: sourceWin.boundsLimits, // Inherit limits?
             zIndex: app.mwindows.length + 1,
+            isDeclarative: false,
             mtabs: [{ ...tabToMove, active: true }]
         };
 

@@ -17,6 +17,7 @@ export interface MWindow extends Tnode {
   boundsLimits?: BoundsLimits;
   zIndex: number;
   isDeclarative?: boolean;
+  isHeaderVisible?: boolean;
   mtabs: MTab[]; // if empty or null (though array is better), window is "invisible" or empty
 }
 

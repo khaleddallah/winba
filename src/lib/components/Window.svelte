@@ -15,6 +15,7 @@
   export let movable: boolean = true;
   export let resizable: boolean = true;
   export let zIndex: number = 1;
+  export let isHeaderVisible: boolean = true;
   export let declarative: boolean = true;
   
   setContext("windowId", id);
@@ -32,6 +33,7 @@
       bounds,
       zIndex,
       isDeclarative: declarative,
+      isHeaderVisible,
       mtabs: [] // Tabs will register themselves
   });
 
@@ -47,6 +49,7 @@
   $: currentBounds = config?.bounds || bounds;
   $: isActive = $AppStore.activeWindowId === id;
   $: currentZIndex = config?.zIndex || zIndex;
+  $: showHeader = config?.isHeaderVisible ?? isHeaderVisible;
   $: tabs = config?.mtabs || [];
   $: visibleTabs = tabs.filter((t) => t.visible ?? true);
   $: activeTab = visibleTabs.find(t => t.active) || visibleTabs[0];
@@ -275,8 +278,8 @@
     if (resizeHandle.includes('n')) { y += dy; h -= dy; }
     
     const limits = config.boundsLimits || {};
-    const minW = limits.minW || 200;
-    const minH = limits.minH || 150;
+    const minW = limits.minW || 10;
+    const minH = limits.minH || 10;
     const maxW = limits.maxW || Infinity;
     const maxH = limits.maxH || Infinity;
 
@@ -519,17 +522,18 @@
     on:mousedown={onMouseDown}
   >
     <!-- Header / Tab Bar -->
-    <div class="window-header flex h-7 items-center px-2 select-none gap-2">
+    {#if showHeader}
+    <div class="window-header flex h-10 items-center px-2 select-none gap-2">
        <!-- Drag Handle / Menu -->
-       <button class="cursor-grab text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-2 py-0 rounded-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-         ≡
+       <button class="cursor-grab text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
        </button>
        
        <!-- Tabs -->
        <div class="flex-1 flex overflow-hidden items-center gap-1">
          {#each visibleTabs as tab (tab.id)}
            <button
-             class="px-2 py-0 text-xs font-medium rounded-md transition-all truncate max-w-[150px] border border-transparent select-none"
+             class="px-3 py-1 text-xs font-medium rounded-md transition-all truncate max-w-[150px] border border-transparent select-none"
              class:bg-slate-200={tab.active}
              class:dark:bg-slate-700={tab.active}
              class:text-slate-900={tab.active}
@@ -545,6 +549,7 @@
          {/each}
        </div>
     </div>
+    {/if}
 
     <!-- Content -->
     <div class="window-content flex-1 overflow-auto relative bg-white dark:bg-slate-800">

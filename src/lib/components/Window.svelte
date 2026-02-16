@@ -518,18 +518,25 @@
     on:mousedown={onMouseDown}
   >
     <!-- Header / Tab Bar -->
-    <div class="window-header flex bg-gray-100 dark:bg-slate-900 border-b border-gray-300 dark:border-slate-700 h-8 items-center px-2 select-none">
+    <div class="window-header flex h-7 items-center px-2 select-none gap-2">
        <!-- Drag Handle / Menu -->
-       <button class="mr-2 cursor-grab text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">≡</button>
+       <button class="cursor-grab text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-2 py-0 rounded-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+         ≡
+       </button>
        
        <!-- Tabs -->
-       <div class="flex-1 flex overflow-hidden">
+       <div class="flex-1 flex overflow-hidden items-center gap-1">
          {#each visibleTabs as tab (tab.id)}
            <button
-             class="px-3 py-1 text-sm border-r border-gray-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-700 truncate max-w-[150px]"
-             class:bg-white={tab.active}
-             class:dark:bg-slate-800={tab.active}
-             class:font-bold={tab.active}
+             class="px-2 py-0 text-xs font-medium rounded-md transition-all truncate max-w-[150px] border border-transparent select-none"
+             class:bg-slate-200={tab.active}
+             class:dark:bg-slate-700={tab.active}
+             class:text-slate-900={tab.active}
+             class:dark:text-slate-100={tab.active}
+             class:text-slate-500={!tab.active}
+             class:hover:bg-slate-100={!tab.active}
+             class:dark:text-slate-400={!tab.active}
+             class:dark:hover:bg-slate-800={!tab.active}
              on:mousedown={(e) => onTabMouseDown(e, tab.id)}
            >
              {tab.title}
